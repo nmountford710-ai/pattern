@@ -60,5 +60,25 @@ router.post('/link-token/create',
     }
   })
 );
+router.get('/link-token/create', asyncWrapper(async (req, res) => {
+  try {
+    const linkTokenParams = {
+      user: {
+        // any fixed test id is fine for now
+        client_user_id: 'test-user',
+      },
+      client_name: 'EndEasy',
+      products: ['transactions'],
+      country_codes: ['US'],
+      language: 'en',
+    };
+
+    const createResponse = await plaid.linkTokenCreate(linkTokenParams);
+    res.json(createResponse.data);
+  } catch (err) {
+    console.error('error while creating link token (GET /link-token/create)', err);
+    res.status(500).json({ error: err.message });
+  }
+}));
 
 module.exports = router;
