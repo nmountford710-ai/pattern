@@ -20,7 +20,7 @@ const redirect_uri =
     : PLAID_PRODUCTION_REDIRECT_URI;
 const router = express.Router();
 
-router.post(
+router.post('/link-token/create',
   '/',
   asyncWrapper(async (req, res) => {
     try {
