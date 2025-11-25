@@ -60,7 +60,7 @@ router.post('/link-token/create',
     }
   })
 );
-router.get('/link-token/create', asyncWrapper(async (req, res) => {
+router.get('/create', asyncWrapper(async (req, res) => {
   try {
     const linkTokenParams = {
       user: {
