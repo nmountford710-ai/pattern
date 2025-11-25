@@ -24,10 +24,10 @@ const {
 
 const app = express();
 
-const { PORT } = process.env;
+const { PORT } = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
-  console.log(`listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 const io = socketIo(server, {
@@ -62,8 +62,8 @@ io.on('connection', socket => {
   });
 });
 
-app.get('/test', (req, res) => {
-  res.send('test response');
+app.get('/health', (req, res) => {
+  res.status(200) .send('OK');
 });
 
 app.use('/users', usersRouter);
