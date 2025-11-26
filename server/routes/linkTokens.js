@@ -6,7 +6,7 @@ const port = process.env.PORT || 3000;
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    message: "Project 1 backend basic test",
+    message: "EndEasy backend basic test",
   });
 });
 
