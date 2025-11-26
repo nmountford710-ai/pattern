@@ -1,66 +1,97 @@
 /**
- * Routes for Plaid Link token creation
+ * Defines the route for Plaid Link token creation.
  */
 
 const { asyncWrapper } = require('../middleware');
 const express = require('express');
 const plaid = require('../plaid');
 
+const {
+  PLAID_SANDBOX_REDIRECT_URI,
+  PLAID_PRODUCTION_REDIRECT_URI,
+  PLAID_ENV,
+  PLAID_WEBHOOK_URL,
+} = process.env;
+
+// Choose redirect URL based on environment (optional)
+const redirect_uri =
+  PLAID_ENV === 'sandbox'
+    ? PLAID_SANDBOX_REDIRECT_URI
+    : PLAID_PRODUCTION_REDIRECT_URI;
+
 const router = express.Router();
 
 /**
- * POST /link-token
- * Full URL: https://project-1-vjcg.onrender.com/link-token
- * (You can use this later from a frontend that sends POST requests.)
+ * Helper to build link token params for a user
+ */
+function buildLinkTokenParams(userId) {
+  const params = {
+    user: {
+      // Any fixed id is fine for now
+      client_user_id: userId || 'test-user',
+    },
+    client_name: 'EndEasy',
+    products: ['transactions'],
+    country_codes: ['US'],
+    language: 'en',
+  };
+
+  if (PLAID_WEBHOOK_URL) {
+    params.webhook = PLAID_WEBHOOK_URL;
+  }
+
+  if (redirect_uri && redirect_uri.indexOf('http') === 0) {
+    params.redirect_uri = redirect_uri;
+  }
+
+  return params;
+}
+
+/**
+ * POST /link-token   (optional, if you ever want POST)
  */
 router.post(
   '/',
   asyncWrapper(async (req, res) => {
-    const userId = req.body?.userId || 'test-user';
+    try {
+      const { userId } = req.body || {};
+      const linkTokenParams = buildLinkTokenParams(userId);
 
-    const request = {
-      user: { client_user_id: userId },
-      client_name: 'EndEasy',
-      products: ['transactions'],
-      language: 'en',
-      country_codes: ['US', 'CA'],
-    };
+      const createResponse = await plaid.linkTokenCreate(linkTokenParams);
 
-    const response = await plaid.linkTokenCreate(request);
-    res.json(response.data);
+      return res.json(createResponse.data);
+    } catch (err) {
+      console.error('Plaid link token error (POST /link-token):', err);
+
+      if (err.response && err.response.data) {
+        return res.status(500).json(err.response.data);
+      }
+
+      return res.status(500).json({ error: err.message || 'link token error' });
+    }
   })
 );
 
 /**
- * GET /link-token/create
- * This is the one you call from Softr or the browser.
- * Full URL: https://project-1-vjcg.onrender.com/link-token/create
+ * GET /link-token/create  (this is the one you’re calling from the browser)
  */
 router.get(
   '/create',
   asyncWrapper(async (req, res) => {
     try {
-      const request = {
-        user: { client_user_id: 'test-user' },
-        client_name: 'EndEasy',
-        products: ['transactions'],
-        language: 'en',
-        country_codes: ['US', 'CA'],
-      };
+      const linkTokenParams = buildLinkTokenParams('test-user');
 
-      const response = await plaid.linkTokenCreate(request);
-      res.json(response.data);
+      const createResponse = await plaid.linkTokenCreate(linkTokenParams);
+
+      return res.json(createResponse.data);
     } catch (err) {
-      // Log full Plaid error to Render logs
-      console.error(
-        'Error creating link token (GET /link-token/create)',
-        err.response?.data || err
-      );
+      console.error('Plaid link token error (GET /link-token/create):', err);
 
-      // Send useful error back to browser so you can see what’s wrong
-      res.status(500).json({
-        error: err.response?.data || err.message || 'link token error',
-      });
+      if (err.response && err.response.data) {
+        return res.status(500).json(err.response.data);
+      }
+
+      return res.status(500).json({ error: err.message || 'link token error' });
     }
   })
 );
