@@ -10,13 +10,13 @@ const router = express.Router();
 
 /**
  * POST /link-token
- * Can be used later by a frontend that sends POST requests.
  * Full URL: https://project-1-vjcg.onrender.com/link-token
+ * (You can use this later from a frontend that sends POST requests.)
  */
 router.post(
   '/',
   asyncWrapper(async (req, res) => {
-    const userId = req.body.userId || 'test-user';
+    const userId = req.body?.userId || 'test-user';
 
     const request = {
       user: { client_user_id: userId },
@@ -33,7 +33,7 @@ router.post(
 
 /**
  * GET /link-token/create
- * This is the simple route you can hit from the browser or Softr.
+ * This is the one you call from Softr or the browser.
  * Full URL: https://project-1-vjcg.onrender.com/link-token/create
  */
 router.get(
@@ -51,9 +51,15 @@ router.get(
       const response = await plaid.linkTokenCreate(request);
       res.json(response.data);
     } catch (err) {
-      console.error('Error creating link token (GET /link-token/create)', err);
+      // Log full Plaid error to Render logs
+      console.error(
+        'Error creating link token (GET /link-token/create)',
+        err.response?.data || err
+      );
+
+      // Send useful error back to browser so you can see what’s wrong
       res.status(500).json({
-        error: err.message || 'link token error',
+        error: err.response?.data || err.message || 'link token error',
       });
     }
   })
